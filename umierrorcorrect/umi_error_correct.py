@@ -453,7 +453,7 @@ def cluster_umis_all_regions(regions, ends, edit_distance_threshold, samplename,
                 j=0
             else:
                 posx=int(pos)
-            tmpfilename = '{}/tmp_{}.bam'.format(output_path, i)
+            tmpfilename = '{}/tmp_{}_{}.bam'.format(output_path, contig, i)
             numreads = sum(regions[contig][pos].values())
             if numreads > 100000: #split in chunks
                 umi_dict=regions[contig][pos]
@@ -461,12 +461,12 @@ def cluster_umis_all_regions(regions, ends, edit_distance_threshold, samplename,
                 clusters = get_connected_components(umi_dict, adj_matrix)
                 newdicts=split_into_chunks(umi_dict,clusters)
                 for x in newdicts:
-                    tmpfilename = '{}/tmp_{}.bam'.format(output_path, i)
+                    tmpfilename = '{}/tmp_{}_{}.bam'.format(output_path, contig, i)
                     argvec.append((x, samplename, tmpfilename, i, contig, posx,
                                     int(ends[contig][pos]), int(edit_distance_threshold), bamfilename,
                                     include_singletons, annotations, fasta, consensus_method, 
                                     indel_frequency_cutoff, consensus_frequency_cutoff,outputjson))
-                    bamfilelist.append('{}/tmp_{}.bam'.format(output_path, i))
+                    bamfilelist.append(tmpfilename)
                     if not region_from_tag:
                         i += 1
                     else:
@@ -477,7 +477,7 @@ def cluster_umis_all_regions(regions, ends, edit_distance_threshold, samplename,
                                 int(ends[contig][pos]), int(edit_distance_threshold), bamfilename,
                                 include_singletons, annotations, fasta, consensus_method, 
                                 indel_frequency_cutoff, consensus_frequency_cutoff,outputjson))
-                bamfilelist.append('{}/tmp_{}.bam'.format(output_path, i))
+                bamfilelist.append(tmpfilename)
                 if not region_from_tag:
                     i += 1
 
