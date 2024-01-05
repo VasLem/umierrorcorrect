@@ -92,8 +92,8 @@ def check_args_fastq(args):
         f1file=args.output_path + '/' + args.sample_name + '_R1_umis_in_header.fastq.gz'
         f2file=args.output_path + '/' + args.sample_name + '_R2_umis_in_header.fastq.gz'
         if os.path.isfile(f1file) or os.path.isfile(f2file):
-            if not args.force:
-                raise ValueError("The file {} already exists. Overwrite it by including --force in the command line".format(f1file))
+            if not args.resume and not args.force:
+                raise ValueError("The file {} already exists. Overwrite it by including --force, or use the previous by including --resume, in the command line".format(f1file))
             else:
                 os.remove(f1file)
                 os.remove(f2file)
@@ -101,8 +101,8 @@ def check_args_fastq(args):
         f1file=args.output_path + '/' + args.sample_name + '_umis_in_header.fastq.gz'
         #print(f1file)
         if os.path.isfile(f1file):
-            if not args.force:
-                raise ValueError("The file {} already exists. Overwrite it by including --force in the command line".format(f1file))
+            if not args.resume and not args.force:
+                raise ValueError("The file {} already exists. Overwrite it by including --force, or use the previous by including --resume, in the command line".format(f1file))
             else:
                 os.remove(f1file)
     return(args)

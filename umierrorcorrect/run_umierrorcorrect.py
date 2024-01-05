@@ -115,6 +115,9 @@ def parseArgs():
                         help='Include this flag to force output files to be overwritten')
     group6.add_argument('-t', '--num_threads', dest='num_threads', 
                         help='Number of threads to run the program on. Default=%(default)s', default='1')
+    group7 = parser.add_argument_group('Debugging parameters (Only if you know what you are doing)')
+    group7.add_argument('-re', '--resume', dest='resume',action='store_true',
+                        help='Include this flag to resume a previously stopped run, considering existing preprocessed and mapped files')
     args = parser.parse_args(sys.argv[1:])
     logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%Y-%m-%d %H:%M:%S', level=logging.DEBUG)
     logging.info('Starting UMI Error Correct')
@@ -127,9 +130,27 @@ def main(args):
     args=check_args_fastq(args)
     check_bwa_index(args.reference_file)
     #args=check_args_bam(args)
-    fastq_files, nseqs = run_preprocessing(args)  # run preprocessing
-    logging.info('Files: {}, number of reads: {}'.format(' '.join(fastq_files),nseqs))
-    bam_file = run_mapping(args.num_threads, args.reference_file, fastq_files, 
+    skip_preproc = False
+    if args.mode == 'paired':
+        f1file=args.output_path + '/' + args.sample_name + '_R1_umis_in_header.fastq.gz'
+        f2file=args.output_path + '/' + args.sample_name + '_R2_umis_in_header.fastq.gz'
+        if os.path.isfile(f1file) and os.path.isfile(f2file):
+            skip_preproc = True
+            fastq_files = [f1file, f2file]
+    elif args.mode == 'single':
+        f1file=args.output_path + '/' + args.sample_name + '_umis_in_header.fastq.gz'
+        if os.path.isfile(f1file):
+            skip_preproc = True
+            fastq_files = [f1file]
+    if not skip_preproc:
+        fastq_files, nseqs = run_preprocessing(args)  # run preprocessing
+        logging.info('Files: {}, number of reads: {}'.format(' '.join(fastq_files),nseqs))
+    skip_mapping = False
+    bam_file = args.output_path + '/' + args.sample_name + '.sorted.bam'
+    if args.resume and os.path.isfile(bam_file):
+        skip_mapping = True
+    if not skip_mapping:
+        bam_file = run_mapping(args.num_threads, args.reference_file, fastq_files, 
                            args.output_path, args.sample_name, args.remove_large_files)  # run mapping
     args.bam_file = bam_file
     #print(args.bam_file)
