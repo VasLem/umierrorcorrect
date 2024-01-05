@@ -128,27 +128,30 @@ def main(args):
     if not args.sample_name:
         args.sample_name = get_sample_name(args.read1, args.mode)
     args=check_args_fastq(args)
+    bam_file = args.output_path + '/' + args.sample_name + '.sorted.bam'
+    
     check_bwa_index(args.reference_file)
     #args=check_args_bam(args)
     skip_preproc = False
-    if args.mode == 'paired':
-        f1file=args.output_path + '/' + args.sample_name + '_R1_umis_in_header.fastq.gz'
-        f2file=args.output_path + '/' + args.sample_name + '_R2_umis_in_header.fastq.gz'
-        if os.path.isfile(f1file) and os.path.isfile(f2file):
-            skip_preproc = True
-            fastq_files = [f1file, f2file]
-    elif args.mode == 'single':
-        f1file=args.output_path + '/' + args.sample_name + '_umis_in_header.fastq.gz'
-        if os.path.isfile(f1file):
-            skip_preproc = True
-            fastq_files = [f1file]
+    skip_mapping = False
+    if args.resume and os.path.isfile(bam_file):
+        skip_mapping = True
+        skip_preproc = True
+    if not skip_preproc:
+        if args.mode == 'paired':
+            f1file=args.output_path + '/' + args.sample_name + '_R1_umis_in_header.fastq.gz'
+            f2file=args.output_path + '/' + args.sample_name + '_R2_umis_in_header.fastq.gz'
+            if os.path.isfile(f1file) and os.path.isfile(f2file):
+                skip_preproc = True
+                fastq_files = [f1file, f2file]
+        elif args.mode == 'single':
+            f1file=args.output_path + '/' + args.sample_name + '_umis_in_header.fastq.gz'
+            if os.path.isfile(f1file):
+                skip_preproc = True
+                fastq_files = [f1file]
     if not skip_preproc:
         fastq_files, nseqs = run_preprocessing(args)  # run preprocessing
         logging.info('Files: {}, number of reads: {}'.format(' '.join(fastq_files),nseqs))
-    skip_mapping = False
-    bam_file = args.output_path + '/' + args.sample_name + '.sorted.bam'
-    if args.resume and os.path.isfile(bam_file):
-        skip_mapping = True
     if not skip_mapping:
         bam_file = run_mapping(args.num_threads, args.reference_file, fastq_files, 
                            args.output_path, args.sample_name, args.remove_large_files)  # run mapping
