@@ -17,7 +17,7 @@ import logging
 import pickle
 from itertools import islice
 import json
-
+from warnings import warn
 def parseArgs():
     '''Function for parsing arguments'''
     parser = argparse.ArgumentParser(description="UmiErrorCorrect v. {}. \
@@ -107,7 +107,10 @@ def cluster_consensus_worker(args):
     '''Run UMI clustering and consensus read generation on one region'''
     umi_dict, samplename, tmpfilename, regionid, contig, start, end, edit_distance_threshold, \
     bamfilename, include_singletons, annotations, fasta, consensus_method, indel_frequency_cutoff, \
-    consensus_frequency_cutoff,output_json = args  # extract args
+    consensus_frequency_cutoff,output_json, skip_if_exists = args  # extract args
+    outfilename = tmpfilename
+    if skip_if_exists and os.path.isfile(tmpfilename):
+        return
     
     indel_frequency_cutoff = float(indel_frequency_cutoff)
     consensus_frequency_cutoff = float(consensus_frequency_cutoff)
@@ -129,7 +132,7 @@ def cluster_consensus_worker(args):
         consensus_seq = get_all_consensus_msa(position_matrix, umis, contig, regionid, indel_frequency_cutoff, consensus_frequency_cutoff, output_json)
 
     
-    outfilename = tmpfilename
+    
     
     #Write consensus reads (and singletons) to a BAM file
     num_cons=0
@@ -193,9 +196,12 @@ def merge_bams(output_path, original_bamfile, bamfilelist, sample_name):
     new_header = update_bam_header(original_bamfile, sample_name)
     g=pysam.AlignmentFile(output_path + '/' + sample_name + '_consensus_reads.bam', 'wb', header=new_header)
     for filename in bamfilelist:
-        with pysam.AlignmentFile(filename, 'rb') as f1:
-            for line in f1:
-                g.write(line)
+        try:
+            with pysam.AlignmentFile(filename, 'rb') as f1:
+                for line in f1:
+                    g.write(line)
+        except OSError:
+            warn(f"Filename {filename} skipped because of error")
     g.close()
         
     for filename in bamfilelist:
@@ -432,7 +438,7 @@ def split_into_chunks(umi_dict,clusters):
 
 def cluster_umis_all_regions(regions, ends, edit_distance_threshold, samplename,  bamfilename, output_path, 
                              include_singletons, fasta, bedregions, num_cpus, consensus_method,
-                             indel_frequency_cutoff, consensus_frequency_cutoff, outputjson=False,region_from_tag=False,starts=[]):
+                             indel_frequency_cutoff, consensus_frequency_cutoff, outputjson=False,region_from_tag=False,starts=[], skip_if_exists=False):
     '''Function for running UMI cluestering and error correction using num_cpus threads,
         i.e. one region on each thread.'''
     argvec = []
@@ -454,6 +460,7 @@ def cluster_umis_all_regions(regions, ends, edit_distance_threshold, samplename,
             else:
                 posx=int(pos)
             tmpfilename = '{}/tmp_{}_{}.bam'.format(output_path, contig, i)
+
             numreads = sum(regions[contig][pos].values())
             if numreads > 100000: #split in chunks
                 umi_dict=regions[contig][pos]
@@ -578,13 +585,13 @@ def run_umi_errorcorrect(args):
                                            args.include_singletons, fasta, bedregions,
                                            num_cpus, consensus_method, args.indel_frequency_threshold,
                                            args.consensus_frequency_threshold,args.output_json,
-                                           args.regions_from_tag, starts)
+                                           args.regions_from_tag, starts, skip_if_exists=args.resume)
     else:
         bamfilelist = cluster_umis_all_regions(regions, ends, edit_distance_threshold, 
                                            args.sample_name, args.bam_file, args.output_path, 
                                            args.include_singletons, fasta, bedregions, 
                                            num_cpus,consensus_method, args.indel_frequency_threshold, 
-                                           args.consensus_frequency_threshold,args.output_json)
+                                           args.consensus_frequency_threshold,args.output_json, skip_if_exists=args.resume)
     merge_bams(args.output_path, args.bam_file, bamfilelist, args.sample_name)
     index_bam_file(args.output_path + '/' + args.sample_name + '_consensus_reads.bam',
               num_cpus)
