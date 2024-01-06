@@ -472,7 +472,7 @@ def cluster_umis_all_regions(regions, ends, edit_distance_threshold, samplename,
                     argvec.append((x, samplename, tmpfilename, i, contig, posx,
                                     int(ends[contig][pos]), int(edit_distance_threshold), bamfilename,
                                     include_singletons, annotations, fasta, consensus_method, 
-                                    indel_frequency_cutoff, consensus_frequency_cutoff,outputjson))
+                                    indel_frequency_cutoff, consensus_frequency_cutoff,outputjson, skip_if_exists))
                     bamfilelist.append(tmpfilename)
                     if not region_from_tag:
                         i += 1
@@ -483,7 +483,7 @@ def cluster_umis_all_regions(regions, ends, edit_distance_threshold, samplename,
                 argvec.append((regions[contig][pos], samplename, tmpfilename, i, contig, posx, 
                                 int(ends[contig][pos]), int(edit_distance_threshold), bamfilename,
                                 include_singletons, annotations, fasta, consensus_method, 
-                                indel_frequency_cutoff, consensus_frequency_cutoff,outputjson))
+                                indel_frequency_cutoff, consensus_frequency_cutoff,outputjson, skip_if_exists))
                 bamfilelist.append(tmpfilename)
                 if not region_from_tag:
                     i += 1

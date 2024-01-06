@@ -31,14 +31,14 @@ def test_part1(bam_file,reference_fasta):
     argvec.append((umi_dict, 'test', tmpfilename, int(i), contig, int(pos),
                    int(ends[contig][pos]), int(1), bam_file,
                    False, annotations, reference_fasta, 60,
-                   60))
+                   60, False))
     bamfilelist.append('{}/tmp_{}.bam'.format('failedbams3', i))
     p = Pool(int(1))
     p.map(cluster_consensus_worker, argvec)
     update_bam_header(tmpfilename,'test')
     umi_dict, samplename, tmpfilename, regionid, contig, start, end, edit_distance_threshold, \
     bamfilename, include_singletons, annotations, fasta, indel_frequency_cutoff, \
-    consensus_frequency_cutoff = argvec[0]    
+    consensus_frequency_cutoff, skip_if_exists = argvec[0]    
     adj_matrix = cluster_barcodes(umi_dict, 1)
     clusters = get_connected_components(umi_dict, adj_matrix)
     umis = merge_clusters(umi_dict, clusters)
